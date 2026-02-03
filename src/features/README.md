@@ -16,7 +16,7 @@ This document lists all planned and implemented features for mule account detect
 
 | # | Feature | Category | GDS Required | Status |
 |---|---------|----------|--------------|--------|
-| 1 | [Community Mule Density](#1-community-mule-density) | Network | Yes (Louvain) | Planned |
+| 1 | [Community Mule Density](#1-community-mule-density) | Network | Yes (Louvain) | Complete |
 | 2 | [Distance to Known Mule](#2-distance-to-known-mule) | Proximity | No | Complete |
 | 3 | [Transaction Velocity](#3-transaction-velocity) | Behavioural | No | Planned |
 | 4 | [Account Age vs Activity](#4-account-age-vs-activity) | Behavioural | No | Planned |
