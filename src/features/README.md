@@ -18,7 +18,7 @@ This document lists all planned and implemented features for mule account detect
 |---|---------|----------|--------------|--------|
 | 1 | [Community Mule Density](#1-community-mule-density) | Network | Yes (Louvain) | Complete |
 | 2 | [Distance to Known Mule](#2-distance-to-known-mule) | Proximity | No | Complete |
-| 3 | [Counterparty Diversity](#3-counterparty-diversity) | Network | No | Planned |
+| 3 | [Counterparty Diversity](#3-counterparty-diversity) | Network | No | Complete |
 | 4 | [Shared Identity Markers](#4-shared-identity-markers) | Identity | No | Planned |
 | 5 | [PageRank Centrality](#5-pagerank-centrality) | Network | Yes (PageRank) | Planned |
 
