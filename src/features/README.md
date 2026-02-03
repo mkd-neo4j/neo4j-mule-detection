@@ -18,14 +18,9 @@ This document lists all planned and implemented features for mule account detect
 |---|---------|----------|--------------|--------|
 | 1 | [Community Mule Density](#1-community-mule-density) | Network | Yes (Louvain) | Complete |
 | 2 | [Distance to Known Mule](#2-distance-to-known-mule) | Proximity | No | Complete |
-| 3 | [Transaction Velocity](#3-transaction-velocity) | Behavioural | No | Planned |
-| 4 | [Account Age vs Activity](#4-account-age-vs-activity) | Behavioural | No | Planned |
-| 5 | [Counterparty Diversity](#5-counterparty-diversity) | Behavioural | No | Planned |
-| 6 | [Round Amount Detection](#6-round-amount-detection) | Transaction | No | Planned |
-| 7 | [Time-of-Day Patterns](#7-time-of-day-patterns) | Behavioural | No | Planned |
-| 8 | [Geographic Anomalies](#8-geographic-anomalies) | Geographic | No | Planned |
-| 9 | [Shared Identity Markers](#9-shared-identity-markers) | Identity | No | Planned |
-| 10 | [PageRank Centrality](#10-pagerank-centrality) | Network | Yes (PageRank) | Planned |
+| 3 | [Counterparty Diversity](#3-counterparty-diversity) | Network | No | Planned |
+| 4 | [Shared Identity Markers](#4-shared-identity-markers) | Identity | No | Planned |
+| 5 | [PageRank Centrality](#5-pagerank-centrality) | Network | Yes (PageRank) | Planned |
 
 ---
 
@@ -95,78 +90,9 @@ RETURN a.accountNumber, a.distanceToMule, a.nearestMuleId
 
 ---
 
-### 3. Transaction Velocity
+### 3. Counterparty Diversity
 
-**Category:** Behavioural Analysis
-**GDS Required:** No
-**Folder:** `transaction_velocity/`
-
-#### Why
-
-Mule accounts often show abnormal transaction patterns: sudden spikes in activity, unusual volumes, or consistent high-frequency transfers. Normal accounts have predictable rhythms; mules deviate from these patterns.
-
-#### What
-
-Calculate transaction frequency metrics over multiple time windows:
-- Transactions per day (last 7 days)
-- Transactions per week (last 4 weeks)
-- Transactions per month (last 3 months)
-- Velocity change (current week vs. historical average)
-
-#### Output Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `txPerDay7d` | Float | Average transactions per day (last 7 days) |
-| `txPerWeek4w` | Float | Average transactions per week (last 4 weeks) |
-| `velocityChange` | Float | Ratio of current to historical velocity |
-
-#### Use at Query Time
-
-```cypher
-MATCH (a:Account {accountNumber: $target})
-WHERE a.velocityChange > 3.0  // 3x normal activity
-RETURN a.accountNumber, a.velocityChange
-```
-
----
-
-### 4. Account Age vs Activity
-
-**Category:** Behavioural Analysis
-**GDS Required:** No
-**Folder:** `account_age_activity/`
-
-#### Why
-
-Mule accounts are often newly opened and quickly become highly active. A legitimate account builds transaction history gradually; a mule account shows disproportionate activity relative to its age.
-
-#### What
-
-Calculate the ratio of transaction volume to account age, normalised against typical accounts.
-
-#### Output Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `accountAgeDays` | Integer | Days since account was opened |
-| `totalTransactions` | Integer | Total transaction count |
-| `activityRatio` | Float | Transactions per day since opening |
-| `activityPercentile` | Float | Percentile rank compared to all accounts |
-
-#### Use at Query Time
-
-```cypher
-MATCH (a:Account {accountNumber: $target})
-WHERE a.accountAgeDays < 90 AND a.activityPercentile > 0.95
-RETURN a.accountNumber, a.accountAgeDays, a.activityPercentile
-```
-
----
-
-### 5. Counterparty Diversity
-
-**Category:** Behavioural Analysis
+**Category:** Network Analysis
 **GDS Required:** No
 **Folder:** `counterparty_diversity/`
 
@@ -197,111 +123,7 @@ RETURN a.accountNumber, a.diversityRatio, a.totalTransactions
 
 ---
 
-### 6. Round Amount Detection
-
-**Category:** Transaction Pattern
-**GDS Required:** No
-**Folder:** `round_amount_detection/`
-
-#### Why
-
-Money launderers often transfer round amounts (e.g., £1,000, £5,000, £10,000) because they're moving predetermined sums rather than paying for actual goods/services. A high proportion of round-amount transactions is a red flag.
-
-#### What
-
-Analyse transaction amounts and calculate the percentage that are "round" (divisible by 100, 500, 1000, etc.).
-
-#### Output Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `roundAmountCount` | Integer | Transactions with round amounts |
-| `roundAmountRatio` | Float | % of transactions that are round amounts |
-| `avgRoundAmount` | Float | Average value of round transactions |
-
-#### Use at Query Time
-
-```cypher
-MATCH (a:Account {accountNumber: $target})
-WHERE a.roundAmountRatio > 0.5
-RETURN a.accountNumber, a.roundAmountRatio
-```
-
----
-
-### 7. Time-of-Day Patterns
-
-**Category:** Behavioural Analysis
-**GDS Required:** No
-**Folder:** `time_patterns/`
-
-#### Why
-
-Automated money movement often occurs at unusual hours—late night or early morning when legitimate business is minimal. Mule accounts may show transaction patterns that don't align with normal human behaviour.
-
-#### What
-
-Analyse transaction timestamps to identify:
-- Distribution across hours of the day
-- Weekend vs. weekday patterns
-- Clustering of transactions in unusual time windows
-
-#### Output Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `nightTxRatio` | Float | % of transactions between 00:00-06:00 |
-| `weekendTxRatio` | Float | % of transactions on Saturday/Sunday |
-| `peakHour` | Integer | Most common transaction hour (0-23) |
-| `timePatternScore` | Float | Anomaly score based on timing |
-
-#### Use at Query Time
-
-```cypher
-MATCH (a:Account {accountNumber: $target})
-WHERE a.nightTxRatio > 0.3
-RETURN a.accountNumber, a.nightTxRatio, a.peakHour
-```
-
----
-
-### 8. Geographic Anomalies
-
-**Category:** Geographic Analysis
-**GDS Required:** No
-**Folder:** `geographic_anomalies/`
-
-#### Why
-
-Transactions to high-risk jurisdictions, or patterns where an account's stated location doesn't match transaction geography, indicate potential money laundering or mule activity.
-
-#### What
-
-Compare account jurisdiction against transaction destinations and identify:
-- Transactions to high-risk countries
-- Mismatches between customer address and transaction locations
-- Unusual cross-border patterns
-
-#### Output Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `highRiskTxCount` | Integer | Transactions to high-risk jurisdictions |
-| `highRiskTxRatio` | Float | % of transactions to high-risk areas |
-| `crossBorderRatio` | Float | % of transactions that are international |
-| `locationMismatch` | Boolean | Customer address doesn't match tx geography |
-
-#### Use at Query Time
-
-```cypher
-MATCH (a:Account {accountNumber: $target})
-WHERE a.highRiskTxRatio > 0.2 OR a.locationMismatch = true
-RETURN a.accountNumber, a.highRiskTxRatio, a.locationMismatch
-```
-
----
-
-### 9. Shared Identity Markers
+### 4. Shared Identity Markers
 
 **Category:** Identity Analysis
 **GDS Required:** No
@@ -340,7 +162,7 @@ RETURN a.accountNumber, a.identityRiskScore, a.sharedEmailCount
 
 ---
 
-### 10. PageRank Centrality
+### 5. PageRank Centrality
 
 **Category:** Network Analysis
 **GDS Required:** Yes (PageRank)
@@ -378,9 +200,9 @@ After implementing individual features, a composite risk score can be calculated
 ```cypher
 MATCH (a:Account {accountNumber: $target})
 RETURN a.accountNumber,
-       (a.muleDensity * 0.2 +
-        CASE WHEN a.distanceToMule <= 2 THEN 0.3 ELSE 0 END +
-        CASE WHEN a.velocityChange > 3 THEN 0.15 ELSE 0 END +
+       (a.muleDensity * 0.25 +
+        CASE WHEN a.distanceToMule <= 2 THEN 0.25 ELSE 0 END +
+        CASE WHEN a.diversityRatio < 0.1 THEN 0.15 ELSE 0 END +
         a.identityRiskScore * 0.2 +
         CASE WHEN a.pageRankPercentile > 0.95 THEN 0.15 ELSE 0 END
        ) AS compositeRiskScore
@@ -390,20 +212,11 @@ RETURN a.accountNumber,
 
 ## Implementation Priority
 
-**Phase 1 - Foundation:**
-1. Community Mule Density (requires Louvain setup)
-2. Distance to Known Mule (core proximity metric)
+**Phase 1 - Foundation (Complete):**
+1. Community Mule Density (Louvain community detection)
+2. Distance to Known Mule (shortest path traversal)
 
-**Phase 2 - Behavioural:**
-3. Transaction Velocity
-4. Account Age vs Activity
-5. Counterparty Diversity
-
-**Phase 3 - Patterns:**
-6. Round Amount Detection
-7. Time-of-Day Patterns
-
-**Phase 4 - Advanced:**
-8. Geographic Anomalies
-9. Shared Identity Markers
-10. PageRank Centrality
+**Phase 2 - Network & Identity:**
+3. Counterparty Diversity (relationship counting)
+4. Shared Identity Markers (entity resolution through shared PII)
+5. PageRank Centrality (graph centrality algorithm)
