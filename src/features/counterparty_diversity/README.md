@@ -152,9 +152,26 @@ export NEO4J_URI="neo4j://localhost:7687"
 export NEO4J_USER="neo4j"
 export NEO4J_PASSWORD="your-password"
 
-# Run batch + real-time demo
-python -m src.features.counterparty_diversity.counterparty_diversity
+# Real-time mode (default) - calculate on-the-fly
+python -m src.features.counterparty_diversity.counterparty_diversity --mode realtime
+
+# Batch mode - update all accounts
+python -m src.features.counterparty_diversity.counterparty_diversity --mode batch
+
+# Both modes
+python -m src.features.counterparty_diversity.counterparty_diversity --mode both
+
+# Override accounts for real-time query
+python -m src.features.counterparty_diversity.counterparty_diversity --source ACC123 --target ACC456
 ```
+
+**CLI Options:**
+
+| Flag | Values | Default | Description |
+|------|--------|---------|-------------|
+| `--mode` | `realtime`, `batch`, `both` | `realtime` | Which mode to run |
+| `--source` | account number | config value | Source account for real-time |
+| `--target` | account number | config value | Target account for real-time |
 
 ## Dependencies
 

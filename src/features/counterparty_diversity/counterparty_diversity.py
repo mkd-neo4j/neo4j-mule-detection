@@ -166,9 +166,32 @@ def run(
 
 
 if __name__ == "__main__":
+    import argparse
     import os
 
     from dotenv import load_dotenv
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="Counterparty Diversity - Mule Account Detection Feature"
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["realtime", "batch", "both"],
+        default="realtime",
+        help="Mode: 'realtime' (default), 'batch', or 'both'",
+    )
+    parser.add_argument(
+        "--source",
+        type=str,
+        help="Source account for real-time query (overrides config)",
+    )
+    parser.add_argument(
+        "--target",
+        type=str,
+        help="Target account for real-time query (overrides config)",
+    )
+    args = parser.parse_args()
 
     # Load .env file from project root
     load_dotenv()
@@ -181,120 +204,130 @@ if __name__ == "__main__":
 
     conf = get_conf()
 
+    # Override config with CLI args if provided
+    if args.source:
+        conf["sourceAccount"] = args.source
+    if args.target:
+        conf["targetAccount"] = args.target
+
     print("=" * 60)
     print("Counterparty Diversity Feature")
     print("=" * 60)
     print(f"URI:      {uri}")
     print(f"Database: {database or 'default'}")
+    print(f"Mode:     {args.mode}")
     print("-" * 60)
 
     with GraphDatabase.driver(uri, auth=(user, password)) as driver:
-        # Run batch processing
-        print("\n[BATCH] Calculating diversity metrics...")
-        print("-" * 60)
 
-        results = run_batch(driver, database=database)
+        # Run batch processing if requested
+        if args.mode in ("batch", "both"):
+            print("\n[BATCH] Calculating diversity metrics...")
+            print("-" * 60)
 
-        if results:
-            # Filter to accounts with meaningful transaction volume (> 10)
-            suspicious = [r for r in results if (r.get("totalTransactions") or 0) > 10]
+            results = run_batch(driver, database=database)
 
-            print(f"\nTop 10 suspicious accounts (low diversity, >10 transactions):\n")
-            print(
-                f"{'Account':<20} {'Counterparties':<15} {'Transactions':<15} "
-                f"{'Ratio':<10} {'Top CP %':<10}"
-            )
-            print("-" * 70)
+            if results:
+                # Filter to accounts with meaningful transaction volume (> 10)
+                suspicious = [r for r in results if (r.get("totalTransactions") or 0) > 10]
 
-            for acc in suspicious[:10]:
-                ratio = acc.get("diversityRatio")
-                top_share = acc.get("topCounterpartyShare")
-                ratio_str = f"{ratio:.2%}" if ratio is not None else "N/A"
-                top_str = f"{top_share:.2%}" if top_share is not None else "N/A"
+                print(f"\nTop 10 suspicious accounts (low diversity, >10 transactions):\n")
                 print(
-                    f"{acc.get('accountNumber', 'N/A'):<20} "
-                    f"{acc.get('uniqueCounterparties', 0):<15} "
-                    f"{acc.get('totalTransactions', 0):<15} "
-                    f"{ratio_str:<10} "
-                    f"{top_str}"
+                    f"{'Account':<20} {'Counterparties':<15} {'Transactions':<15} "
+                    f"{'Ratio':<10} {'Top CP %':<10}"
+                )
+                print("-" * 70)
+
+                for acc in suspicious[:10]:
+                    ratio = acc.get("diversityRatio")
+                    top_share = acc.get("topCounterpartyShare")
+                    ratio_str = f"{ratio:.2%}" if ratio is not None else "N/A"
+                    top_str = f"{top_share:.2%}" if top_share is not None else "N/A"
+                    print(
+                        f"{acc.get('accountNumber', 'N/A'):<20} "
+                        f"{acc.get('uniqueCounterparties', 0):<15} "
+                        f"{acc.get('totalTransactions', 0):<15} "
+                        f"{ratio_str:<10} "
+                        f"{top_str}"
+                    )
+
+        # Run real-time query if requested
+        if args.mode in ("realtime", "both"):
+            print("\n" + "=" * 60)
+            print("[REAL-TIME] Transaction Evaluation (On-the-fly)")
+            print("=" * 60)
+            print(f"Source: {conf['sourceAccount']}")
+            print(f"Target: {conf['targetAccount']}")
+            print("-" * 60)
+
+            result = query_realtime(
+                driver,
+                database=database,
+                sourceAccount=conf["sourceAccount"],
+                targetAccount=conf["targetAccount"],
+            )
+
+            if result:
+                print("\nSource Account:")
+                print(f"  Unique Counterparties: {result.get('sourceUniqueCounterparties')}")
+                print(f"  Total Transactions:    {result.get('sourceTotalTransactions')}")
+                src_ratio = result.get("sourceDiversityRatio")
+                src_share = result.get("sourceTopCounterpartyShare")
+                print(
+                    f"  Diversity Ratio:       {src_ratio:.2%}"
+                    if src_ratio is not None
+                    else "  Diversity Ratio:       N/A"
+                )
+                print(
+                    f"  Top Counterparty Share: {src_share:.2%}"
+                    if src_share is not None
+                    else "  Top Counterparty Share: N/A"
                 )
 
-        # Real-time query (on-the-fly calculation)
-        print("\n" + "=" * 60)
-        print("[REAL-TIME] Transaction Evaluation (On-the-fly)")
-        print("=" * 60)
-        print(f"Source: {conf['sourceAccount']}")
-        print(f"Target: {conf['targetAccount']}")
-        print("-" * 60)
+                print("\nTarget Account:")
+                print(f"  Unique Counterparties: {result.get('targetUniqueCounterparties')}")
+                print(f"  Total Transactions:    {result.get('targetTotalTransactions')}")
+                tgt_ratio = result.get("targetDiversityRatio")
+                tgt_share = result.get("targetTopCounterpartyShare")
+                print(
+                    f"  Diversity Ratio:       {tgt_ratio:.2%}"
+                    if tgt_ratio is not None
+                    else "  Diversity Ratio:       N/A"
+                )
+                print(
+                    f"  Top Counterparty Share: {tgt_share:.2%}"
+                    if tgt_share is not None
+                    else "  Top Counterparty Share: N/A"
+                )
 
-        result = query_realtime(
-            driver,
-            database=database,
-            sourceAccount=conf["sourceAccount"],
-            targetAccount=conf["targetAccount"],
-        )
+                # Risk assessment
+                print("\n" + "-" * 60)
+                threshold_ratio = 0.1
+                threshold_share = 0.5
 
-        if result:
-            print("\nSource Account:")
-            print(f"  Unique Counterparties: {result.get('sourceUniqueCounterparties')}")
-            print(f"  Total Transactions:    {result.get('sourceTotalTransactions')}")
-            src_ratio = result.get("sourceDiversityRatio")
-            src_share = result.get("sourceTopCounterpartyShare")
-            print(
-                f"  Diversity Ratio:       {src_ratio:.2%}"
-                if src_ratio is not None
-                else "  Diversity Ratio:       N/A"
-            )
-            print(
-                f"  Top Counterparty Share: {src_share:.2%}"
-                if src_share is not None
-                else "  Top Counterparty Share: N/A"
-            )
+                src_tx = result.get("sourceTotalTransactions") or 0
+                tgt_tx = result.get("targetTotalTransactions") or 0
 
-            print("\nTarget Account:")
-            print(f"  Unique Counterparties: {result.get('targetUniqueCounterparties')}")
-            print(f"  Total Transactions:    {result.get('targetTotalTransactions')}")
-            tgt_ratio = result.get("targetDiversityRatio")
-            tgt_share = result.get("targetTopCounterpartyShare")
-            print(
-                f"  Diversity Ratio:       {tgt_ratio:.2%}"
-                if tgt_ratio is not None
-                else "  Diversity Ratio:       N/A"
-            )
-            print(
-                f"  Top Counterparty Share: {tgt_share:.2%}"
-                if tgt_share is not None
-                else "  Top Counterparty Share: N/A"
-            )
+                src_risk = src_ratio is not None and src_ratio < threshold_ratio and src_tx > 50
+                tgt_risk = tgt_ratio is not None and tgt_ratio < threshold_ratio and tgt_tx > 50
+                src_conc = src_share is not None and src_share > threshold_share
+                tgt_conc = tgt_share is not None and tgt_share > threshold_share
 
-            # Risk assessment
-            print("\n" + "-" * 60)
-            threshold_ratio = 0.1
-            threshold_share = 0.5
-
-            src_tx = result.get("sourceTotalTransactions") or 0
-            tgt_tx = result.get("targetTotalTransactions") or 0
-
-            src_risk = src_ratio is not None and src_ratio < threshold_ratio and src_tx > 50
-            tgt_risk = tgt_ratio is not None and tgt_ratio < threshold_ratio and tgt_tx > 50
-            src_conc = src_share is not None and src_share > threshold_share
-            tgt_conc = tgt_share is not None and tgt_share > threshold_share
-
-            if src_risk or tgt_risk:
-                print("HIGH RISK: Low diversity with high volume")
-                if src_risk:
-                    print(f"  - Source: {src_ratio:.2%} ratio, {src_tx} transactions")
-                if tgt_risk:
-                    print(f"  - Target: {tgt_ratio:.2%} ratio, {tgt_tx} transactions")
-            elif src_conc or tgt_conc:
-                print("MEDIUM RISK: High counterparty concentration")
-                if src_conc:
-                    print(f"  - Source: {src_share:.2%} with top counterparty")
-                if tgt_conc:
-                    print(f"  - Target: {tgt_share:.2%} with top counterparty")
+                if src_risk or tgt_risk:
+                    print("HIGH RISK: Low diversity with high volume")
+                    if src_risk:
+                        print(f"  - Source: {src_ratio:.2%} ratio, {src_tx} transactions")
+                    if tgt_risk:
+                        print(f"  - Target: {tgt_ratio:.2%} ratio, {tgt_tx} transactions")
+                elif src_conc or tgt_conc:
+                    print("MEDIUM RISK: High counterparty concentration")
+                    if src_conc:
+                        print(f"  - Source: {src_share:.2%} with top counterparty")
+                    if tgt_conc:
+                        print(f"  - Target: {tgt_share:.2%} with top counterparty")
+                else:
+                    print("LOW RISK: Normal counterparty diversity for both accounts")
             else:
-                print("LOW RISK: Normal counterparty diversity for both accounts")
-        else:
-            print("\nAccounts not found")
+                print("\nAccounts not found")
 
         print("\n" + "=" * 60)
