@@ -6,7 +6,7 @@ This document describes how features are structured in this repository.
 
 1. **Cypher-First**: The `.cypher` file is the source of truth. Python is a thin wrapper.
 2. **Portable Queries**: Every `.cypher` file can be copied and pasted directly into Neo4j Browser or Workspace.
-3. **Self-Contained**: Each feature folder is independent—no cross-feature dependencies.
+3. **Self-Contained**: Each feature folder is independent with no cross-feature dependencies.
 4. **Documented Value**: Every feature explains *why* it exists, not just *what* it does.
 
 ## Folder Structure
@@ -117,11 +117,11 @@ if __name__ == "__main__":
 
 Feature-specific documentation that answers:
 
-1. **Why?** — What business problem does this solve?
-2. **What?** — What does the feature compute?
-3. **How?** — Brief explanation of the algorithm/approach
-4. **Output** — What properties/values are returned or stored?
-5. **Usage** — Example of how to use the feature
+1. **Why?**: What business problem does this solve?
+2. **What?**: What does the feature compute?
+3. **How?**: Brief explanation of the algorithm/approach
+4. **Output**: What properties/values are returned or stored?
+5. **Usage**: Example of how to use the feature
 
 **Template:**
 

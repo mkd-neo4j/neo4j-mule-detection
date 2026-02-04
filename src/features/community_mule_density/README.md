@@ -2,7 +2,7 @@
 
 ## Why
 
-Mules rarely operate in isolation. They work in **networks**—clusters of accounts that transact with each other to layer and move illicit funds. If an account belongs to a community where 11 out of 20 accounts are confirmed mules, the probability that this account is also a mule is significantly higher than if it belongs to a community with no mules at all.
+Mules rarely operate in isolation. They work in **networks**, clusters of accounts that transact with each other to layer and move illicit funds. If an account belongs to a community where 11 out of 20 accounts are confirmed mules, the probability that this account is also a mule is significantly higher than if it belongs to a community with no mules at all.
 
 This feature leverages graph community detection to identify **guilt by association at scale**. Rather than looking at individual relationships, it analyses the entire neighbourhood structure to calculate risk.
 
@@ -51,7 +51,7 @@ Creates: Account A --[weight: totalAmount]--> Account B
 
 ### Real-Time Query (per transaction)
 - Simple property lookup for source and target accounts
-- No GDS, no aggregation—just read pre-computed values
+- No GDS, no aggregation, just read pre-computed values
 - Millisecond response time
 
 ## Cypher Files
@@ -160,13 +160,13 @@ python -m src.features.community_mule_density.community_mule_density
 - Neo4j Graph Data Science (GDS) library
 
 **Required Labels:**
-- `Account` — Regular accounts in the system
-- `Mule` — Confirmed mule accounts
-- `Transaction` — Transaction nodes
+- `Account`: Regular accounts in the system
+- `Mule`: Confirmed mule accounts
+- `Transaction`: Transaction nodes
 
 **Required Relationships:**
-- `PERFORMS` — Account initiates a transaction
-- `BENEFITS_TO` — Transaction benefits an account
+- `PERFORMS`: Account initiates a transaction
+- `BENEFITS_TO`: Transaction benefits an account
 
 ## Performance Considerations
 

@@ -2,7 +2,7 @@
 
 ## Why
 
-Mule accounts often exhibit a distinctive pattern: **high transaction volume with limited counterparties**. While legitimate accounts build diverse transaction networks over time—paying bills to various merchants, receiving payments from multiple sources—mule accounts typically transact with a small, concentrated set of accounts as they funnel illicit funds through the network.
+Mule accounts often exhibit a distinctive pattern: **high transaction volume with limited counterparties**. While legitimate accounts build diverse transaction networks over time, paying bills to various merchants and receiving payments from multiple sources, mule accounts typically transact with a small, concentrated set of accounts as they funnel illicit funds through the network.
 
 This feature calculates **counterparty diversity metrics** to identify accounts that:
 - Move high volumes through few relationships (potential layering)
@@ -180,13 +180,13 @@ python -m src.features.counterparty_diversity.counterparty_diversity --source AC
 - `python-dotenv` (optional, for environment config)
 
 **Required Labels:**
-- `Account` — Regular accounts in the system
-- `Mule` — Confirmed mule accounts
-- `Transaction` — Transaction nodes
+- `Account`: Regular accounts in the system
+- `Mule`: Confirmed mule accounts
+- `Transaction`: Transaction nodes
 
 **Required Relationships:**
-- `PERFORMS` — Account initiates a transaction
-- `BENEFITS_TO` — Transaction benefits an account
+- `PERFORMS`: Account initiates a transaction
+- `BENEFITS_TO`: Transaction benefits an account
 
 ## Performance Considerations
 

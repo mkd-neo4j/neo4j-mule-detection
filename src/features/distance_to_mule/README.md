@@ -25,8 +25,8 @@ For example:
 Uses Neo4j's `shortestPath()` function to find the minimum number of hops between the target account and any account with the `:Confirmed` label (confirmed mule).
 
 The path traverses through the transaction network via:
-- `(:Account)-[:PERFORMS]->(:Transaction)` — account initiates transaction
-- `(:Transaction)-[:BENEFITS_TO]->(:Account)` — transaction benefits recipient
+- `(:Account)-[:PERFORMS]->(:Transaction)`: account initiates transaction
+- `(:Transaction)-[:BENEFITS_TO]->(:Account)`: transaction benefits recipient
 
 **Key constraints:**
 - Maximum depth of 10 hops (configurable) to prevent expensive queries
@@ -104,12 +104,12 @@ python -m src.features.distance_to_mule.distance_to_mule
 - Neo4j database with Transaction Data Model
 
 **Required Labels:**
-- `Account` — All accounts in the system
-- `Confirmed` — Additional label on accounts confirmed as mules
+- `Account`: All accounts in the system
+- `Confirmed`: Additional label on accounts confirmed as mules
 
 **Required Relationships:**
-- `PERFORMS` — Account initiates a transaction
-- `BENEFITS_TO` — Transaction benefits an account
+- `PERFORMS`: Account initiates a transaction
+- `BENEFITS_TO`: Transaction benefits an account
 
 ## Performance Considerations
 

@@ -170,7 +170,7 @@ RETURN a.accountNumber, a.identityRiskScore, a.sharedEmailCount
 
 #### Why
 
-In a transaction network, some accounts act as hubs—central points through which money flows. These hub accounts are often coordinators in money laundering operations. PageRank identifies accounts with disproportionate influence in the network.
+In a transaction network, some accounts act as hubs, central points through which money flows. These hub accounts are often coordinators in money laundering operations. PageRank identifies accounts with disproportionate influence in the network.
 
 #### What
 
